@@ -1,0 +1,298 @@
+/*
+ * theme.css
+ * DocuPilot design tokens — extracted from DEMO/src/index.css
+ * Single source of truth for all colors, typography, radii, shadows, and spacing.
+ */
+
+/* ─────────────────────────────────────────────
+   1. FONT IMPORT
+   ───────────────────────────────────────────── */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+
+/* ─────────────────────────────────────────────
+   2. DESIGN TOKENS
+   ───────────────────────────────────────────── */
+:root {
+
+  /* --- Background & Surface --- */
+  --bg:             #f7f8fa;
+  --surface:        #ffffff;
+  --surface-subtle: #f9fafb;
+
+  /* --- Brand / Primary --- */
+  --primary:        #3157d5;
+  --primary-hover:  #2949bb;
+  --primary-soft:   #eef2ff;
+
+  /* --- Text --- */
+  --text:           #18212f;
+  --text-secondary: #5d6878;
+  --text-light:     #8993a1;
+
+  /* --- Borders --- */
+  --border:         #e3e7ed;
+  --border-strong:  #cfd5de;
+
+  /* --- Semantic: Success --- */
+  --success:        #13845c;
+  --success-soft:   #eaf8f2;
+
+  /* --- Semantic: Warning --- */
+  --warning:        #a96800;
+  --warning-soft:   #fff6df;
+
+  /* --- Semantic: Danger --- */
+  --danger:         #c83b42;
+  --danger-soft:    #fff0f1;
+
+  /* --- Semantic: Info --- */
+  --info:           #2670c8;
+  --info-soft:      #edf6ff;
+
+  /* --- Layout --- */
+  --sidebar-bg:     #121b2b;
+
+  /* ─── Supplementary hardcoded colors (used in specific components) ─── */
+
+  /* Auth story panel */
+  --auth-story-bg:          #111c31;
+  --auth-copy-eyebrow:      #9eb3ff;
+  --auth-copy-p:            #aeb9ca;
+  --auth-visual-mini-label: #96acfd;
+  --auth-connector-line:    #647bc8;
+  --auth-connector-icon-bg: #24365d;
+
+  /* Sidebar */
+  --sidebar-nav-text:       #9ba7ba;
+  --sidebar-nav-active-bg:  #283b64;
+  --sidebar-nav-active-bar: #6f8dff;
+  --sidebar-user-small:     #8e9bae;
+  --sidebar-logout:         #8f9caf;
+
+  /* Avatar */
+  --avatar-bg:         #394e7d;
+  --avatar-compact-bg: #304d8f;
+
+  /* Privacy card */
+  --privacy-card-bg:    #17243a;
+  --privacy-icon-bg:    #273c61;
+  --privacy-icon-color: #a9bcff;
+  --privacy-body:       #9ba9bc;
+  --privacy-item:       #c6d0df;
+  --privacy-check:      #65d7ae;
+  --privacy-small:      #8695aa;
+
+  /* Form */
+  --label-color: #354052;
+
+  /* Table */
+  --table-row-hover: #fafbfc;
+
+  /* Workflow section */
+  --workflow-bg:     #eff3fb;
+  --workflow-border: #e0e7f3;
+
+  /* Dropzone */
+  --dropzone-bg:     #fafbfc;
+  --dropzone-border: #bac4d1;
+
+  /* Sources panel */
+  --sources-bg: #f7f9fc;
+
+  /* Answer / Analysis body text */
+  --answer-text:   #404c5c;
+  --analysis-text: #455264;
+
+  /* Step number */
+  --step-number: #aab5c7;
+
+  /* ─────────────────────────────────────────────
+     3. BORDER RADIUS
+     ───────────────────────────────────────────── */
+  --radius-sm: 6px;
+  --radius:    10px;
+  --radius-lg: 14px;
+
+  /* ─────────────────────────────────────────────
+     4. SHADOWS
+     ───────────────────────────────────────────── */
+  --shadow:             0 1px 2px rgba(20, 30, 46, 0.04), 0 8px 24px rgba(20, 30, 46, 0.05);
+  --shadow-card:        0 1px 2px rgba(20, 30, 46, 0.02);
+  --shadow-btn-primary: 0 1px 2px rgba(27, 52, 132, 0.2);
+  --shadow-modal:       0 24px 70px rgba(12, 20, 34, 0.25);
+  --shadow-filter-tab:  0 1px 3px rgba(20, 30, 46, 0.12);
+  --shadow-nav-active:  inset 3px 0 #6f8dff;
+
+  /* ─────────────────────────────────────────────
+     5. TYPOGRAPHY
+     ───────────────────────────────────────────── */
+
+  /* Font families */
+  --font-sans: "Inter", sans-serif;
+
+  /* Font sizes */
+  --font-size-base:    14px;
+  --font-size-display: clamp(34px, 4vw, 52px);
+  --font-size-title:   30px;
+  --font-size-page:    26px;
+  --font-size-section: 16px;
+  --font-size-brand:   19px;
+  --font-size-drop:    15px;
+  --font-size-stat:    24px;
+  --font-size-label:   13px;
+  --font-size-small:   12px;
+  --font-size-xs:      11px;
+  --font-size-2xs:     10px;
+  --font-size-3xs:     9px;
+
+  /* Font weights */
+  --font-weight-normal:   400;
+  --font-weight-medium:   500;
+  --font-weight-semibold: 600;
+  --font-weight-bold:     650; /* custom weight loaded from Google Fonts */
+  --font-weight-extrabold: 700;
+
+  /* Line heights */
+  --leading-tight:   1.08;
+  --leading-snug:    1.2;
+  --leading-normal:  1.55;
+  --leading-relaxed: 1.65;
+  --leading-loose:   1.75;
+
+  /* Letter spacing */
+  --tracking-display: -0.045em;
+  --tracking-title:   -0.02em;
+  --tracking-brand:   -0.025em;
+  --tracking-stat:    -0.03em;
+  --tracking-wide:     0.06em;
+  --tracking-wider:    0.1em;
+
+  /* ─────────────────────────────────────────────
+     6. LAYOUT / SPACING CONSTANTS
+     ───────────────────────────────────────────── */
+  --sidebar-width:      248px;
+  --topbar-height:      68px;
+  --content-padding:    42px;
+  --content-max-width:  1280px;
+
+  /* Common spacing scale (not variables in DEMO, defined here for convenience) */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-7:  28px;
+  --space-8:  32px;
+  --space-9:  36px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-14: 56px;
+  --space-16: 64px;
+
+  /* ─────────────────────────────────────────────
+     7. Z-INDEX SCALE
+     ───────────────────────────────────────────── */
+  --z-topbar:  20;
+  --z-sidebar: 30;
+  --z-modal:   100;
+}
+
+/* ─────────────────────────────────────────────
+   8. GLOBAL BASE STYLES
+   ───────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: var(--font-size-base);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid rgba(49, 87, 213, 0.2);
+  outline-offset: 2px;
+}
+
+p {
+  color: var(--text-secondary);
+  line-height: var(--leading-normal);
+  margin: 0;
+}
+
+/* ─────────────────────────────────────────────
+   9. TYPOGRAPHY UTILITY CLASSES
+   ───────────────────────────────────────────── */
+.display {
+  font-size: var(--font-size-display);
+  line-height: var(--leading-tight);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--tracking-display);
+  color: var(--text);
+}
+
+.title {
+  font-size: var(--font-size-title);
+  line-height: var(--leading-snug);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--tracking-title);
+  color: var(--text);
+}
+
+.page-title {
+  font-size: var(--font-size-page);
+  line-height: var(--leading-snug);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--tracking-title);
+  color: var(--text);
+}
+
+.section-title {
+  font-size: var(--font-size-section);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--tracking-title);
+  color: var(--text);
+}
+
+.eyebrow,
+.section-kicker {
+  color: var(--primary);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-extrabold);
+  letter-spacing: var(--tracking-wider);
+  text-transform: uppercase;
+}
+
+/* ─────────────────────────────────────────────
+   10. ANIMATIONS
+   ───────────────────────────────────────────── */
+@keyframes dp-pulse {
+  0%,
+  100% { opacity: 1; }
+  50%  { opacity: 0.55; }
+}

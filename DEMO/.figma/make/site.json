@@ -1,0 +1,10 @@
+{
+  "description": "Effortlessly manage and analyze documents with AI-powered insights, ensuring secure uploads and personalized assistance for professionals.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
