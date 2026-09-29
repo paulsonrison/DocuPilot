@@ -1,8 +1,5 @@
-import "../styles/theme.css";
-import "../styles/components.css";
+import { redirect } from "next/navigation";
 
 export default function Home() {
-  return <div>
-    Hello
-  </div>;
+  redirect("/login");
 }
