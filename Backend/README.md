@@ -38,14 +38,15 @@ cp .env.example .env
 
 ```env
 PORT=8000
-MONGO_URI=                   # MongoDB connection string (required)
-JWT_SECRET=                  # JWT signing secret (required)
+MONGO_URI=                    # MongoDB connection string (required)
+JWT_SECRET=                   # JWT signing secret (required)
 JWT_EXPIRES_IN=15m
 
-RESEND_API_KEY=              # Resend API key (required)
-EMAIL_FROM=DocuPilot <onboarding@resend.dev>   # Resend sandbox sender — no domain needed
+RESEND_API_KEY=               # Resend API key (required)
+EMAIL_FROM=DocuPilot <onboarding@resend.dev>  # Resend sandbox sender — no domain needed
 
-# Redirect all outgoing emails to your verified Resend address during development
+# All outgoing emails are redirected here during development.
+# Set this to the address you have verified in your Resend account.
 DEV_EMAIL_RECIPIENT=you@gmail.com
 
 FRONTEND_URL=http://localhost:3000
@@ -55,7 +56,8 @@ CORS_ORIGIN=http://localhost:3000
 **Production**
 
 ```env
-RESEND_API_KEY=              # Resend API key (required)
+NODE_ENV=production
+RESEND_API_KEY=               # Resend API key (required)
 EMAIL_FROM=DocuPilot <noreply@yourdomain.com>  # Sender on your verified domain
 # DEV_EMAIL_RECIPIENT — omit or leave blank; it is ignored in production
 ```
@@ -72,61 +74,33 @@ The server starts on `http://localhost:8000` by default.
 
 ## Email Architecture
 
-Authentication emails (verification and password reset) flow through a single Resend transport. The development recipient override keeps the full Resend path active during local development — no domain purchase required.
+Authentication emails (verification and password reset) go through Resend in both development and production. The development recipient override lets you test the full flow without a custom domain — no local SMTP server needed.
 
 ```
 auth.service.js
       ↓
-email.service.js   ← resolves recipient, delegates to provider
+email.service.js        ← resolves recipient, delegates to Resend
       ↓
-resend.provider.js ← Resend transport
+resend.provider.js      ← Resend transport
       ↓
-         ┌──────────────────────┬──────────────────────┐
-         │ development          │ production           │
-         │ DEV_EMAIL_RECIPIENT  │ actual user email    │
-         └──────────────────────┴──────────────────────┘
+  development           production
+  DEV_EMAIL_RECIPIENT   actual user email
 ```
 
-### Recipient resolution
+`email.service.js` contains a `resolveRecipient` function:
 
-`email.service.js` contains a single `resolveRecipient` function:
+- `NODE_ENV !== "production"` and `DEV_EMAIL_RECIPIENT` is set → email goes to the developer's verified address.
+- Otherwise → email goes to the actual user's address.
 
-- If `NODE_ENV` is **not** `production` and `DEV_EMAIL_RECIPIENT` is set → delivers to the developer's verified address.
-- Otherwise → delivers to the actual user's email.
-
-The authentication layer (`auth.service.js`) always passes the real user email. It never needs to know about the override.
-
-### Testing the registration flow (development)
-
-```
-POST /api/auth/register  { email: "testuser@example.com" }
-  → user created, verification token generated for testuser
-  → email.service resolves recipient → DEV_EMAIL_RECIPIENT
-  → Resend delivers to your verified inbox
-  → open email, click "Verify my email"
-  → frontend sends token → POST /api/auth/verify-email
-  → testuser's account is verified
-```
-
-### Testing the forgot-password flow (development)
-
-```
-POST /api/auth/forgot-password  { email: "testuser@example.com" }
-  → reset token generated for testuser
-  → email.service resolves recipient → DEV_EMAIL_RECIPIENT
-  → Resend delivers reset email to your verified inbox
-  → open email, click "Reset my password"
-  → frontend sends token + new password → POST /api/auth/reset-password
-  → testuser's password updated
-```
+The authentication layer always passes the real user email and never needs to know about the override. In production, `DEV_EMAIL_RECIPIENT` is explicitly ignored — it cannot accidentally redirect real users even if the variable is still present.
 
 ### Going to production
 
-No code changes are required. Update `.env`:
+No code changes required. Update `.env`:
 
 1. Set `NODE_ENV=production`
-2. Set `EMAIL_FROM` to a sender address on your verified Resend domain
-3. Remove or leave blank `DEV_EMAIL_RECIPIENT` — it is ignored in production
+2. Set `EMAIL_FROM` to a sender on your verified Resend domain
+3. Remove or leave blank `DEV_EMAIL_RECIPIENT`
 
 ---
 
@@ -145,36 +119,36 @@ src/
 │   ├── auth.controller.js
 │   └── profile.controller.js
 ├── emails/
-│   ├── verification.email.js      # Verification email template
-│   ├── password-reset.email.js    # Password-reset email template
+│   ├── verification.email.js    # Verification email template
+│   ├── password-reset.email.js  # Password reset email template
 │   └── providers/
-│       └── resend.provider.js     # Resend transport
+│       └── resend.provider.js   # Resend transport
 ├── errors/
 │   └── app.error.js        # AppError class (operational errors with statusCode)
 ├── middleware/
-│   ├── auth.middleware.js   # JWT Bearer token verification → req.user
-│   ├── error.middleware.js  # Global error handler
-│   ├── rate-limit.middleware.js
-│   └── validate.middleware.js # Zod schema validation → 400 with field errors
+│   ├── auth.middleware.js        # JWT Bearer token verification → req.user
+│   ├── error.middleware.js       # Global error handler
+│   ├── rate-limit.middleware.js  # express-rate-limit configuration
+│   └── validate.middleware.js    # Zod schema validation → 400 with field errors
 ├── models/
 │   ├── user.model.js
-│   └── auth-token.model.js
+│   └── auth-token.model.js       # Verification and reset tokens
 ├── routes/
+│   ├── index.routes.js
 │   ├── auth.routes.js
-│   ├── profile.routes.js
-│   └── index.routes.js
+│   └── profile.routes.js
 ├── services/
-│   ├── auth.service.js     # Register / login / verify / reset business logic
-│   ├── auth-token.service.js
-│   ├── email.service.js    # Recipient resolution + Resend delegation
+│   ├── auth.service.js           # Register / login / verify / reset business logic
+│   ├── auth-token.service.js     # Token creation, lookup, and expiry
+│   ├── email.service.js          # Recipient resolution + Resend delegation
 │   └── profile.service.js
 ├── utils/
-│   ├── auth-token.js
-│   └── jwt.js              # generateAccessToken helper
+│   ├── auth-token.js             # Token generation helpers
+│   └── jwt.js                    # generateAccessToken helper
 └── validators/
-    ├── auth.validator.js   # Zod schemas for register + login
-    ├── email.validator.js
-    └── profile.validator.js
+    ├── auth.validator.js         # Zod schemas for register, login, reset-password
+    ├── email.validator.js        # Zod schemas for verify-email, resend, forgot-password
+    └── profile.validator.js      # Zod schemas for update profile and change password
 ```
 
 ---
@@ -185,11 +159,11 @@ Base URL: `http://localhost:8000`
 
 ### Auth — `/api/auth`
 
-No authentication required.
+No authentication required on any auth route.
 
 #### `POST /api/auth/register`
 
-Create a new user account.
+Create a new user account. Sends a verification email.
 
 **Request body**
 ```json
@@ -200,7 +174,7 @@ Create a new user account.
 }
 ```
 
-**Validation rules**
+**Validation**
 - `username` — minimum 3 characters
 - `email` — valid email format
 - `password` — minimum 8 characters
@@ -208,10 +182,12 @@ Create a new user account.
 **Response `201`**
 ```json
 {
+  "message": "Registration successful. Please check your email to verify your account.",
   "user": {
-    "_id": "...",
+    "id": "...",
     "username": "paulanderson",
-    "email": "paul@company.com"
+    "email": "paul@company.com",
+    "emailVerified": false
   }
 }
 ```
@@ -220,7 +196,7 @@ Create a new user account.
 
 #### `POST /api/auth/login`
 
-Authenticate and receive an access token.
+Authenticate and receive an access token. Requires email to be verified.
 
 **Request body**
 ```json
@@ -240,6 +216,73 @@ Authenticate and receive an access token.
   },
   "accessToken": "<JWT>"
 }
+```
+
+---
+
+#### `POST /api/auth/verify-email`
+
+Verify an email address using the token from the verification email.
+
+**Request body**
+```json
+{ "token": "<verification-token>" }
+```
+
+**Response `200`**
+```json
+{ "message": "Email verified successfully." }
+```
+
+---
+
+#### `POST /api/auth/resend-verification`
+
+Resend a verification email for an unverified account.
+
+**Request body**
+```json
+{ "email": "paul@company.com" }
+```
+
+**Response `200`**
+```json
+{ "message": "Verification email sent." }
+```
+
+---
+
+#### `POST /api/auth/forgot-password`
+
+Request a password reset email. Always returns `200` regardless of whether the email exists (prevents user enumeration).
+
+**Request body**
+```json
+{ "email": "paul@company.com" }
+```
+
+**Response `200`**
+```json
+{ "message": "If an account with that email exists, a password reset link has been sent." }
+```
+
+---
+
+#### `POST /api/auth/reset-password`
+
+Set a new password using the token from the reset email.
+
+**Request body**
+```json
+{
+  "token": "<reset-token>",
+  "password": "NewSecurePass1!"
+}
+```
+
+**Response `200`**
+```json
+{ "message": "Password reset successful." }
 ```
 
 ---
@@ -271,18 +314,35 @@ Update username and/or email. At least one field must be provided.
 
 **Request body**
 ```json
-{
-  "username": "newusername"
-}
+{ "username": "newusername" }
 ```
 
-**Validation rules**
+**Validation**
 - `username` — minimum 3 characters (optional)
 - `email` — valid email format (optional)
 - Extra fields are rejected (`.strict()`)
 - At least one field must be present
 
 **Response `200`** — updated profile (same shape as `GET /api/profile`)
+
+---
+
+#### `PATCH /api/profile/password`
+
+Change the current user's password. Requires the existing password.
+
+**Request body**
+```json
+{
+  "currentPassword": "OldPass1!",
+  "newPassword": "NewPass1!"
+}
+```
+
+**Response `200`**
+```json
+{ "message": "Password updated successfully." }
+```
 
 ---
 
@@ -298,7 +358,7 @@ The `authenticate` middleware:
 3. Attaches `req.user = { id: payload.sub }` for use in controllers.
 4. Returns `401` with a distinct message for expired vs. invalid tokens.
 
-> There is no refresh token mechanism yet. Clients will need to re-authenticate when the token expires.
+> There is no refresh token mechanism. Clients re-authenticate when the token expires.
 
 ---
 
@@ -315,20 +375,31 @@ All errors go through the global error handler in `error.middleware.js`.
 | Operational error (`AppError`) | varies | Uses `error.statusCode` |
 | Expired JWT | `401` | "Authentication token has expired" |
 | Invalid JWT | `401` | "Invalid authentication token" |
-| Unhandled server error | `500` | Generic message in production |
+| Email delivery failure | `500` | Generic message — provider details never exposed |
+| Unhandled server error | `500` | Generic message |
 
 ---
 
-## Data Model
+## Data Models
 
 **User** (collection: `users`)
 
 | Field | Type | Constraints |
 |---|---|---|
 | `username` | String | Required, unique |
-| `email` | String | Unique |
+| `email` | String | Required, unique |
 | `passwordHash` | String | Required — bcrypt hash (salt rounds: 10) |
+| `emailVerified` | Boolean | Default `false` |
 | `createdAt` | Date | Auto (Mongoose timestamps) |
 | `updatedAt` | Date | Auto (Mongoose timestamps) |
 
-The `passwordHash` field is excluded from all profile query responses via `.select("-passwordHash")`.
+`passwordHash` is excluded from all profile responses via `.select("-passwordHash")`.
+
+**AuthToken** (collection: `authtokens`)
+
+| Field | Type | Notes |
+|---|---|---|
+| `userId` | ObjectId | Ref to User |
+| `token` | String | Hashed token value |
+| `type` | String | `"email_verification"` or `"password_reset"` |
+| `expiresAt` | Date | TTL — 24h for verification, 1h for reset |

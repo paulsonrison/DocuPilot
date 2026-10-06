@@ -17,15 +17,20 @@ DocuPilot/
 
 ```
 DEMO (Figma Make prototype)
-  ↓  design system + screens extracted
-docu-pilot (Next.js)  ←────────────→  Backend (Express API)
-  auth pages (login/register)          POST /api/auth/register
-  component library                    POST /api/auth/login
-  feature dirs (scaffolded)            GET  /api/profile
-                                       PATCH /api/profile
+  ↓  design reference for every screen
+docu-pilot (Next.js)  ←────────────────────→  Backend (Express API)
+  Full auth flow                               POST /api/auth/register
+  Document upload (client-side)                POST /api/auth/login
+  Dashboard, documents, profile UI             POST /api/auth/verify-email
+                                               POST /api/auth/resend-verification
+                                               POST /api/auth/forgot-password
+                                               POST /api/auth/reset-password
+                                               GET  /api/profile
+                                               PATCH /api/profile
+                                               PATCH /api/profile/password
 ```
 
-The **DEMO** is the design source of truth — it contains a fully interactive prototype of every screen in the product. The **`docu-pilot`** frontend is the production implementation, with auth pages built and feature pages scaffolded. The **Backend** provides the auth and profile REST API; AI document processing is reserved for a future phase.
+The **DEMO** is the design source of truth — a fully interactive prototype of every screen. The **`docu-pilot`** frontend is the production implementation with auth and profile fully wired to the backend; document management is client-side only pending backend document APIs. The **Backend** provides auth, profile, and transactional email via Resend.
 
 ---
 
@@ -33,65 +38,75 @@ The **DEMO** is the design source of truth — it contains a fully interactive p
 
 ### Backend — `Backend/`
 
-Node.js + Express REST API with JWT authentication and MongoDB persistence.
+Node.js + Express REST API with JWT authentication, MongoDB persistence, and Resend email.
 
 | | |
 |---|---|
 | **Framework** | Express 5.x |
 | **Database** | MongoDB / Mongoose 9.x |
 | **Auth** | JWT + bcrypt |
+| **Email** | Resend 6.x |
 | **Validation** | Zod 4.x |
 | **Port** | `8000` (default) |
 
-**API surface**
+**Auth API**
 
-| Method | Route | Auth | Description |
-|---|---|---|---|
-| POST | `/api/auth/register` | — | Create account |
-| POST | `/api/auth/login` | — | Login, returns JWT |
-| GET | `/api/profile` | Bearer JWT | Get current user's profile |
-| PATCH | `/api/profile` | Bearer JWT | Update username / email |
+| Method | Route | Description |
+|---|---|---|
+| POST | `/api/auth/register` | Create account, send verification email |
+| POST | `/api/auth/login` | Login, returns JWT |
+| POST | `/api/auth/verify-email` | Verify email with token from email link |
+| POST | `/api/auth/resend-verification` | Resend verification email |
+| POST | `/api/auth/forgot-password` | Send password reset email |
+| POST | `/api/auth/reset-password` | Set new password with token from email link |
 
-See [`Backend/README.md`](./Backend/README.md) for full setup instructions and API reference.
+**Profile API** (Bearer JWT required)
+
+| Method | Route | Description |
+|---|---|---|
+| GET | `/api/profile` | Get current user's profile |
+| PATCH | `/api/profile` | Update username / email |
+| PATCH | `/api/profile/password` | Change password |
+
+See [`Backend/README.md`](./Backend/README.md) for full setup instructions, email architecture, and API reference.
 
 ---
 
 ### Frontend — `docu-pilot/`
 
-Next.js 16 production app. Auth pages are live; dashboard and document features are scaffolded against the DEMO design reference.
+Next.js 16 production app. The full authentication flow is wired end-to-end. Dashboard, documents, and profile pages are built; AI document processing awaits the backend document API.
 
 | | |
 |---|---|
 | **Framework** | Next.js 16.3.6 (App Router) |
 | **Language** | TypeScript 5 / React 19 |
 | **Styling** | Custom CSS design system + Tailwind CSS v4 |
+| **State** | React Context + sessionStorage / localStorage |
 | **Port** | `3000` (default) |
 
 **Implemented pages**
 
 | Route | Description |
 |---|---|
-| `/login` | Login form |
-| `/register` | Register form with live password rules |
-| `/customDocs` | Component library demo |
+| `/login` | Email + password login |
+| `/register` | Registration with live password strength rules |
+| `/forgot-password` | Request password reset email |
+| `/reset-password` | Set new password via email link |
+| `/verify-email` | Auto-verifies account from email link |
+| `/dashboard` | Stats overview + recent documents |
+| `/documents` | Document list with search and status filters |
+| `/documents/upload` | Drag-and-drop file upload (client-side) |
+| `/documents/[id]` | Document detail — AI analysis + Ask AI |
+| `/profile` | Edit username and email |
+| `/profile/security` | Change password |
 
-**Planned pages** (reference `DEMO/src/App.tsx`)
-
-| Route | Description |
-|---|---|
-| `/dashboard` | Stats overview and recent documents |
-| `/documents` | Document list with search and filtering |
-| `/documents/upload` | Drag-and-drop file upload |
-| `/documents/[id]` | AI analysis + Ask AI chat |
-| `/profile` | User settings and security |
-
-See [`docu-pilot/README.md`](./docu-pilot/README.md) for setup, project structure, and component library docs.
+See [`docu-pilot/README.md`](./docu-pilot/README.md) for setup, project structure, component library, and auth flow docs.
 
 ---
 
 ### DEMO — `DEMO/`
 
-A complete, fully interactive UI prototype generated by Figma Make. Implemented as a single self-contained React + Vite app — no backend, no routing library, just `window.history.pushState`.
+A complete, fully interactive UI prototype generated by Figma Make. Self-contained React + Vite app — no backend, no routing library.
 
 | | |
 |---|---|
@@ -99,13 +114,13 @@ A complete, fully interactive UI prototype generated by Figma Make. Implemented 
 | **Language** | TypeScript 5.7 |
 | **Styling** | Tailwind CSS v4 |
 
-Every screen in the product is implemented here and serves as the design reference for `docu-pilot/`:
+Screens implemented (design reference for `docu-pilot/`):
 
 - Login, Register, Forgot / Reset password
 - Dashboard with stats and recent documents
 - Document list with search and status filters
-- Upload flow with drag-and-drop, validation checks, and progress
-- Document detail with AI analysis tab and Ask AI chat
+- Upload flow with drag-and-drop, validation, and progress
+- Document detail with AI analysis and Ask AI chat
 - Profile and Security settings
 
 ---
@@ -117,12 +132,13 @@ Each project runs independently. Open three terminals:
 ```bash
 # 1. Backend API
 cd Backend
-cp .env.example .env   # fill in MONGO_URI and JWT_SECRET
+cp .env.example .env   # fill in MONGO_URI, JWT_SECRET, RESEND_API_KEY, EMAIL_FROM, DEV_EMAIL_RECIPIENT
 npm install
 npm start              # http://localhost:8000
 
 # 2. Frontend
 cd docu-pilot
+cp .env.example .env.local   # set NEXT_PUBLIC_API_URL=http://localhost:8000
 npm install
 npm run dev            # http://localhost:3000
 
@@ -136,15 +152,28 @@ npm run dev            # http://localhost:8443
 
 ## Environment Variables
 
-The Backend requires a `.env` file — copy `.env.example` to get started:
+### Backend (`Backend/.env`)
 
 ```env
 PORT=8000
-MONGO_URI=            # MongoDB connection string (required)
-JWT_SECRET=           # JWT signing secret (required)
-JWT_EXPIRES_IN=15m    # Token TTL
+MONGO_URI=                    # MongoDB connection string (required)
+JWT_SECRET=                   # JWT signing secret (required)
+JWT_EXPIRES_IN=15m
+
+RESEND_API_KEY=               # Resend API key (required)
+EMAIL_FROM=DocuPilot <onboarding@resend.dev>  # Resend sandbox sender for development
+DEV_EMAIL_RECIPIENT=          # Your Resend-verified email — all dev emails go here
+
+FRONTEND_URL=http://localhost:3000
 CORS_ORIGIN=http://localhost:3000
-OPENAI_API_KEY=       # Reserved for AI document processing
+```
+
+`DEV_EMAIL_RECIPIENT` is ignored in production (`NODE_ENV=production`). In production, emails go to the actual user's address. See `Backend/README.md` for the full email architecture.
+
+### Frontend (`docu-pilot/.env.local`)
+
+```env
+NEXT_PUBLIC_API_URL=http://localhost:8000
 ```
 
 ---
@@ -153,15 +182,18 @@ OPENAI_API_KEY=       # Reserved for AI document processing
 
 | Area | Status |
 |---|---|
-| Backend auth (register / login) | Done |
-| Backend profile (get / update) | Done |
-| Frontend auth pages (login / register) | Done |
-| Frontend component library (14 components) | Done |
-| Frontend → Backend API integration | Pending |
-| Auth state management (context / store) | Pending |
-| Frontend route protection | Pending |
-| Dashboard, Documents, Upload, Profile pages | Pending |
-| Document upload + storage API | Pending |
-| AI document processing (OpenAI) | Planned |
-| CORS middleware in Backend | Pending |
-| JWT refresh token / logout | Planned |
+| Backend — register, login, JWT auth | Done |
+| Backend — email verification flow | Done |
+| Backend — forgot / reset password flow | Done |
+| Backend — profile get / update | Done |
+| Backend — change password | Done |
+| Backend — transactional email (Resend) | Done |
+| Frontend — full auth flow (all 6 endpoints) | Done |
+| Frontend — component library (14 components) | Done |
+| Frontend — dashboard + document list UI | Done |
+| Frontend — profile + change password | Done |
+| Frontend — document upload (client-side) | Done |
+| Frontend → Backend document storage API | Pending |
+| AI document processing (OCR + OpenAI) | Planned |
+| JWT refresh token / logout endpoint | Planned |
+| Real-time document status updates | Planned |
