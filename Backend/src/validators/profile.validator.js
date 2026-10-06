@@ -8,6 +8,7 @@ const updateProfileSchema = z
       .optional(),
 
     email: z
+      .string()
       .email("Please provide a valid email address")
       .optional()
   })
@@ -19,6 +20,25 @@ const updateProfileSchema = z
     }
   );
 
+const changePasswordSchema = z
+  .object({
+    currentPassword: z
+      .string()
+      .min(1, "Current password is required"),
+
+    newPassword: z
+      .string()
+      .min(8, "New password must be at least 8 characters long")
+  })
+  .refine(
+    (data) => data.currentPassword !== data.newPassword,
+    {
+      message: "New password must be different from current password",
+      path: ["newPassword"]
+    }
+  );
+
 module.exports = {
-  updateProfileSchema
+  updateProfileSchema,
+  changePasswordSchema
 };

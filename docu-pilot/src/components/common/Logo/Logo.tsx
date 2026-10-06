@@ -20,7 +20,7 @@ export default function Logo({
   light = false,
   className = "",
 }: LogoProps) {
-  const markClass = `brand-mark brand-mark-${size === "md" ? "" : size}`.trim();
+  const markClass = size === "md" ? "brand-mark" : `brand-mark brand-mark-${size}`;
 
   return (
     <div

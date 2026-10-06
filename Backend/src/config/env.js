@@ -1,33 +1,40 @@
-"use strict";
-
 require("dotenv").config();
 
 // ---------------------------------------------------------------------------
-// Required variable validation
-// Fail fast at startup so a missing secret is never a runtime surprise.
+// Required in all environments
 // ---------------------------------------------------------------------------
-const REQUIRED = ["MONGO_URI", "JWT_SECRET"];
+const required = ["MONGO_URI", "JWT_SECRET", "RESEND_API_KEY", "EMAIL_FROM"];
 
-const missing = REQUIRED.filter((key) => !process.env[key]);
-
-if (missing.length > 0) {
-  throw new Error(
-    `Missing required environment variables: ${missing.join(", ")}\n` +
-      "Check your .env file against .env.example."
-  );
+for (const key of required) {
+  if (!process.env[key]) {
+    throw new Error(`Missing environment variable: ${key}`);
+  }
 }
 
 // ---------------------------------------------------------------------------
-// Exported configuration object
-// All application code should import this module instead of reading
-// process.env directly so that environment concerns stay in one place.
+// Exports
 // ---------------------------------------------------------------------------
-const config = {
+module.exports = {
   port: Number(process.env.PORT) || 8000,
+
+  nodeEnv: process.env.NODE_ENV || "development",
+
   mongoUri: process.env.MONGO_URI,
+
   jwtSecret: process.env.JWT_SECRET,
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || "15m",
-  corsOrigin: process.env.CORS_ORIGIN || "http://localhost:5173",
-};
 
-module.exports = config;
+  // Email
+  resendApiKey: process.env.RESEND_API_KEY,
+  emailFrom: process.env.EMAIL_FROM,
+
+  // Development recipient override.
+  // When set and NODE_ENV is not "production", all outgoing emails
+  // are redirected to this address instead of the actual user email.
+  // This lets you test the full Resend flow without a custom domain.
+  // Leave empty (or unset) in production — it is intentionally ignored there.
+  devEmailRecipient: process.env.DEV_EMAIL_RECIPIENT || "",
+
+  frontendUrl: process.env.FRONTEND_URL || "http://localhost:3000",
+  corsOrigin: process.env.CORS_ORIGIN || "http://localhost:3000",
+};

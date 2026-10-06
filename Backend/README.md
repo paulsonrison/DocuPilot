@@ -14,6 +14,7 @@ REST API for DocuPilot, an AI-powered document intelligence workspace. Handles u
 | **Auth** | JWT (`jsonwebtoken` 9.x) + bcrypt 6.x |
 | **Validation** | Zod 4.x |
 | **Config** | dotenv 18.x |
+| **Email** | Resend 6.x |
 
 ---
 
@@ -33,13 +34,30 @@ Copy `.env.example` to `.env` and fill in the required values:
 cp .env.example .env
 ```
 
+**Development**
+
 ```env
 PORT=8000
-MONGO_URI=           # MongoDB connection string (required)
-JWT_SECRET=          # JWT signing secret (required)
-JWT_EXPIRES_IN=15m   # Token TTL — default 15 minutes
+MONGO_URI=                   # MongoDB connection string (required)
+JWT_SECRET=                  # JWT signing secret (required)
+JWT_EXPIRES_IN=15m
+
+RESEND_API_KEY=              # Resend API key (required)
+EMAIL_FROM=DocuPilot <onboarding@resend.dev>   # Resend sandbox sender — no domain needed
+
+# Redirect all outgoing emails to your verified Resend address during development
+DEV_EMAIL_RECIPIENT=you@gmail.com
+
+FRONTEND_URL=http://localhost:3000
 CORS_ORIGIN=http://localhost:3000
-OPENAI_API_KEY=      # Reserved for AI document processing (not yet wired)
+```
+
+**Production**
+
+```env
+RESEND_API_KEY=              # Resend API key (required)
+EMAIL_FROM=DocuPilot <noreply@yourdomain.com>  # Sender on your verified domain
+# DEV_EMAIL_RECIPIENT — omit or leave blank; it is ignored in production
 ```
 
 ### 3. Start the server
@@ -49,6 +67,66 @@ npm start
 ```
 
 The server starts on `http://localhost:8000` by default.
+
+---
+
+## Email Architecture
+
+Authentication emails (verification and password reset) flow through a single Resend transport. The development recipient override keeps the full Resend path active during local development — no domain purchase required.
+
+```
+auth.service.js
+      ↓
+email.service.js   ← resolves recipient, delegates to provider
+      ↓
+resend.provider.js ← Resend transport
+      ↓
+         ┌──────────────────────┬──────────────────────┐
+         │ development          │ production           │
+         │ DEV_EMAIL_RECIPIENT  │ actual user email    │
+         └──────────────────────┴──────────────────────┘
+```
+
+### Recipient resolution
+
+`email.service.js` contains a single `resolveRecipient` function:
+
+- If `NODE_ENV` is **not** `production` and `DEV_EMAIL_RECIPIENT` is set → delivers to the developer's verified address.
+- Otherwise → delivers to the actual user's email.
+
+The authentication layer (`auth.service.js`) always passes the real user email. It never needs to know about the override.
+
+### Testing the registration flow (development)
+
+```
+POST /api/auth/register  { email: "testuser@example.com" }
+  → user created, verification token generated for testuser
+  → email.service resolves recipient → DEV_EMAIL_RECIPIENT
+  → Resend delivers to your verified inbox
+  → open email, click "Verify my email"
+  → frontend sends token → POST /api/auth/verify-email
+  → testuser's account is verified
+```
+
+### Testing the forgot-password flow (development)
+
+```
+POST /api/auth/forgot-password  { email: "testuser@example.com" }
+  → reset token generated for testuser
+  → email.service resolves recipient → DEV_EMAIL_RECIPIENT
+  → Resend delivers reset email to your verified inbox
+  → open email, click "Reset my password"
+  → frontend sends token + new password → POST /api/auth/reset-password
+  → testuser's password updated
+```
+
+### Going to production
+
+No code changes are required. Update `.env`:
+
+1. Set `NODE_ENV=production`
+2. Set `EMAIL_FROM` to a sender address on your verified Resend domain
+3. Remove or leave blank `DEV_EMAIL_RECIPIENT` — it is ignored in production
 
 ---
 
@@ -64,27 +142,39 @@ src/
 ├── constants/
 │   └── http-status.js      # HTTP status code constants
 ├── controllers/
-│   ├── auth.controllers.js
-│   └── profile.controllers.js
+│   ├── auth.controller.js
+│   └── profile.controller.js
+├── emails/
+│   ├── verification.email.js      # Verification email template
+│   ├── password-reset.email.js    # Password-reset email template
+│   └── providers/
+│       └── resend.provider.js     # Resend transport
 ├── errors/
 │   └── app.error.js        # AppError class (operational errors with statusCode)
 ├── middleware/
 │   ├── auth.middleware.js   # JWT Bearer token verification → req.user
 │   ├── error.middleware.js  # Global error handler
+│   ├── rate-limit.middleware.js
 │   └── validate.middleware.js # Zod schema validation → 400 with field errors
 ├── models/
-│   └── auth.models.js      # Mongoose User schema (users collection)
+│   ├── user.model.js
+│   └── auth-token.model.js
 ├── routes/
-│   ├── auth.routers.js
-│   └── profile.routers.js
+│   ├── auth.routes.js
+│   ├── profile.routes.js
+│   └── index.routes.js
 ├── services/
-│   ├── auth.services.js    # Register / login business logic
-│   └── profile.services.js # Get / update profile business logic
+│   ├── auth.service.js     # Register / login / verify / reset business logic
+│   ├── auth-token.service.js
+│   ├── email.service.js    # Recipient resolution + Resend delegation
+│   └── profile.service.js
 ├── utils/
+│   ├── auth-token.js
 │   └── jwt.js              # generateAccessToken helper
 └── validators/
     ├── auth.validator.js   # Zod schemas for register + login
-    └── profile.validator.js # Zod schema for profile update
+    ├── email.validator.js
+    └── profile.validator.js
 ```
 
 ---

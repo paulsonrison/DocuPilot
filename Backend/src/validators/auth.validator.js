@@ -1,22 +1,28 @@
-const {z}=require('zod');
+const { z } = require("zod");
 
-const registerValidator=z.object({
-    username :z
+const registerSchema = z.object({
+  username: z.string().min(3, "Username must be at least 3 characters long"),
+  email: z.string().email("Please provide a valid email address"),
+  password: z.string().min(8, "Password must be at least 8 characters long"),
+});
+
+const loginSchema = z.object({
+  email: z.string().email("Please provide a valid email address"),
+  password: z.string().min(1, "Password is required"),
+});
+
+const resetPasswordSchema = z.object({
+  token: z
     .string()
-    .min(3, "username must at least 3 characters long"),
-    email :z
-    .email("Please provide a valid email address"),
-    password:z
+    .min(1, "Reset token is required"),
+
+  password: z
     .string()
-    .min(8,"Password must be at least 8 characters long")
-})
+    .min(8, "Password must be at least 8 characters long")
+});
 
-const loginValidator = z.object({
-    email:z
-        .email("Please provide a valid email address"),
-    password:z
-        .string()
-        .min(1,"Password is required")
-    })
-
-module.exports={registerValidator,loginValidator};
+module.exports = {
+  registerSchema,
+  loginSchema,
+  resetPasswordSchema
+};

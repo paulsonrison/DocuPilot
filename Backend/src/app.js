@@ -1,16 +1,32 @@
 const express = require("express");
+const helmet = require("helmet");
+const cors = require("cors");
+
+const config = require("./config/env");
+
+const apiRoutes = require("./routes/index.routes");
+const { errorHandler } = require("./middleware/error.middleware");
+const { apiRateLimiter } = require("./middleware/rate-limit.middleware");
 
 const app = express();
 
-const authRouter = require("./routes/auth.routers");
-const {errorHandler} = require("./middleware/error.middleware");
-const profileRoutes = require("./routes/profile.routers");
+app.use(helmet());
 
+app.use(
+  cors({
+    origin: config.corsOrigin,
+  }),
+);
 
-app.use(express.json());
+app.use(
+  express.json({
+    limit: "1mb",
+  }),
+);
 
-app.use("/api/auth", authRouter);
-app.use("/api/profile", profileRoutes);
+app.use("/api", apiRateLimiter);
+
+app.use("/api", apiRoutes);
 
 app.use(errorHandler);
 

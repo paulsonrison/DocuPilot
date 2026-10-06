@@ -25,6 +25,8 @@ export interface InputProps {
   name?: string;
   required?: boolean;
   className?: string;
+  autoComplete?: string;
+  autoFocus?: boolean;
 }
 
 const sizeClass: Record<InputSize, string> = {
@@ -53,6 +55,8 @@ export default function Input({
   name,
   required = false,
   className = "",
+  autoComplete,
+  autoFocus = false,
 }: InputProps) {
   const inputId = id ?? (label ? label.toLowerCase().replace(/\s+/g, "-") : undefined);
 
@@ -61,7 +65,6 @@ export default function Input({
       {label && (
         <label className="field-label" htmlFor={inputId}>
           {label}
-          {required && <span style={{ color: "var(--danger)", marginLeft: 2 }}>*</span>}
         </label>
       )}
 
@@ -78,6 +81,8 @@ export default function Input({
           readOnly={readOnly}
           disabled={disabled}
           required={required}
+          autoComplete={autoComplete}
+          autoFocus={autoFocus}
           aria-invalid={!!error}
           aria-describedby={error ? `${inputId}-error` : hint ? `${inputId}-hint` : undefined}
           onChange={(e) => onChange?.(e.target.value)}

@@ -42,11 +42,13 @@ export default function Tabs({
 
   return (
     <div className={className || undefined}>
-      <div className={`tabs-${variant}`}>
+      <div className={`tabs-${variant}`} role="tablist">
         {items.map((tab) => (
           <button
             key={tab.key}
             type="button"
+            role="tab"
+            aria-selected={active === tab.key}
             className={active === tab.key ? "tab-active" : ""}
             onClick={() => handleSelect(tab.key)}
           >

@@ -17,153 +17,57 @@ const config = {
     description:
       "Upload, understand, and ask questions about your documents—with answers grounded in your content.",
   },
+  "/forgot-password": {
+    eyebrow: "Account recovery",
+    heading: "Reset access without exposing your account details.",
+    description: "We'll send a reset link if an account exists for the email you enter.",
+  },
+  "/reset-password": {
+    eyebrow: "Account recovery",
+    heading: "Choose a strong password you haven't used before.",
+    description: "Password resets expire quickly so unused links cannot be reused.",
+  },
+  "/verify-email": {
+    eyebrow: "Secure AI document workspace",
+    heading: "Verify your email to unlock your workspace.",
+    description: "Email verification is required before you can sign in.",
+  },
 } as const;
 
 type PanelPath = keyof typeof config;
 
-const defaultConfig = config["/login"];
-
 export default function AuthSidePanel() {
   const pathname = usePathname();
   const { eyebrow, heading, description } =
-    config[pathname as PanelPath] ?? defaultConfig;
+    config[pathname as PanelPath] ?? config["/login"];
 
   return (
     <section className="auth-story">
       <Logo light />
-
-      {/* ── Copy block ── */}
-      <div
-        style={{
-          maxWidth: 570,
-          margin: "auto 0 38px",
-          position: "relative",
-        }}
-      >
-        <span
-          className="eyebrow"
-          style={{ color: "var(--auth-copy-eyebrow)", display: "block", marginBottom: 18 }}
-        >
-          {eyebrow}
-        </span>
+      <div className="auth-copy">
+        <span className="eyebrow">{eyebrow}</span>
         <div className="display">{heading}</div>
-        <p
-          style={{
-            color: "var(--auth-copy-p)",
-            fontSize: 16,
-            maxWidth: 530,
-            marginTop: 22,
-          }}
-        >
-          {description}
-        </p>
+        <p>{description}</p>
       </div>
-
-      {/* ── Decorative document → AI visual ── */}
-      <div
-        style={{
-          height: 190,
-          maxWidth: 570,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          position: "relative",
-          marginBottom: "auto",
-        }}
-      >
-        {/* File card */}
-        <div
-          style={{
-            position: "relative",
-            width: 170,
-            height: 145,
-            background: "rgba(255,255,255,0.08)",
-            border: "1px solid rgba(255,255,255,0.12)",
-            borderRadius: "var(--radius-lg)",
-            padding: 22,
-            backdropFilter: "blur(5px)",
-            transform: "rotate(-3deg)",
-            color: "#a7bbff",
-            display: "flex",
-            flexDirection: "column",
-            gap: 11,
-          }}
-        >
+      <div className="document-visual">
+        <div className="visual-file">
           <Icon name="file" size={28} />
-          <span style={{ display: "block", height: 6, borderRadius: 4, background: "rgba(255,255,255,0.14)" }} />
-          <span style={{ display: "block", height: 6, borderRadius: 4, background: "rgba(255,255,255,0.14)" }} />
-          <span style={{ display: "block", height: 6, borderRadius: 4, background: "rgba(255,255,255,0.14)", width: "60%" }} />
+          <span />
+          <span />
+          <span className="short" />
         </div>
-
-        {/* Connector */}
-        <div
-          style={{
-            width: 90,
-            color: "#adc0ff",
-            display: "flex",
-            alignItems: "center",
-          }}
-        >
-          <span style={{ flex: 1, height: 1, background: "var(--auth-connector-line)" }} />
-          <span
-            style={{
-              background: "var(--auth-connector-icon-bg)",
-              padding: 5,
-              borderRadius: "50%",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <Icon name="spark" size={20} />
-          </span>
+        <div className="visual-connector">
+          <span />
+          <Icon name="spark" size={20} />
         </div>
-
-        {/* Answer card */}
-        <div
-          style={{
-            position: "relative",
-            width: 195,
-            height: 145,
-            background: "rgba(255,255,255,0.08)",
-            border: "1px solid rgba(255,255,255,0.12)",
-            borderRadius: "var(--radius-lg)",
-            padding: 22,
-            backdropFilter: "blur(5px)",
-            transform: "rotate(2deg)",
-            display: "flex",
-            flexDirection: "column",
-            gap: 14,
-            color: "white",
-          }}
-        >
-          <span
-            style={{
-              color: "var(--auth-visual-mini-label)",
-              fontSize: 10,
-              textTransform: "uppercase",
-              letterSpacing: "0.1em",
-            }}
-          >
-            AI analysis
-          </span>
-          <strong style={{ fontSize: 13 }}>Key information found</strong>
-          <span style={{ display: "block", height: 6, borderRadius: 4, background: "rgba(255,255,255,0.14)" }} />
-          <span style={{ display: "block", height: 6, borderRadius: 4, background: "rgba(255,255,255,0.14)", width: "60%" }} />
+        <div className="visual-answer">
+          <span className="mini-label">AI analysis</span>
+          <strong>Key information found</strong>
+          <span className="answer-line" />
+          <span className="answer-line short" />
         </div>
       </div>
-
-      {/* ── Trust note ── */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
-          color: "#9eabba",
-          fontSize: 12,
-          marginTop: 44,
-        }}
-      >
+      <div className="trust-note">
         <Icon name="shield" size={17} />
         Your documents are private and securely processed.
       </div>

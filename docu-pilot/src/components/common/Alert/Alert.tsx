@@ -30,7 +30,10 @@ export default function Alert({
   const resolvedIcon = icon ?? defaultIcons[variant];
 
   return (
-    <div className={`alert alert-${variant}${className ? ` ${className}` : ""}`}>
+    <div
+      role="alert"
+      className={`alert alert-${variant}${className ? ` ${className}` : ""}`}
+    >
       <Icon name={resolvedIcon} size={18} />
       <span>
         {title && <strong>{title}</strong>}
